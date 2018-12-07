@@ -99,7 +99,9 @@ class GUI(QMainWindow, Ui_MainWindows):
         super(GUI, self).__init__()
         self.setupUi(self)
         self.scene = QGraphicsScene()
-        self.data = [0 for i in range(10)]
+        self.data1 = [0 for i in range(10)]
+        self.data2 = [0 for i in range(10)]
+        self.data3 = [0 for i in range(10)]
         self.ser = Serial()
         self.open.clicked.connect(self.get_serial)
         self.closebtn.clicked.connect(self.close_serial)
@@ -114,10 +116,11 @@ class GUI(QMainWindow, Ui_MainWindows):
             return None
 
     def read_serial(self):
-        out = self.ser.read(8)
-        v = round((out[6] * 256 + out[7]) * 0.1, 2)
+        out = self.ser.read(24)
+        v1, v2, v3 = round((out[6] * 256 + out[7]) * 0.1, 2), round((out[14] * 256 + out[15]) * 0.1, 2), round(
+            (out[22] * 256 + out[23]) * 0.1, 2)
         time.sleep(0.02)
-        return v
+        return v1, v2, v3
 
     def test_serial(self):
         return self.ser.read(2).decode('iso-8859-1')
@@ -126,10 +129,14 @@ class GUI(QMainWindow, Ui_MainWindows):
         if self.ser.isOpen():
             self.open.setEnabled(False)
             self.closebtn.setEnabled(True)
-            serial_in = self.read_serial()
-            self.output.setPlainText(str(serial_in) + ' MPa')
-            self.data = self.data[1:]
-            self.data.append(serial_in)
+            in1, in2, in3 = self.read_serial()
+            self.output.setPlainText(str(in1) + ' MPa' + '\n' + str(in2) + ' MPa' + '\n' + str(in3) + ' MPa' + '\n')
+            self.data1 = self.data1[1:]
+            self.data1.append(in1)
+            self.data2 = self.data2[1:]
+            self.data2.append(in2)
+            self.data3 = self.data3[1:]
+            self.data3.append(in3)
             self.plot_serial()
         else:
             self.open.setEnabled(True)
@@ -140,10 +147,14 @@ class GUI(QMainWindow, Ui_MainWindows):
 
     def plot_serial(self):
         t = [i / 10.0 for i in range(0, 10)]
-        s = self.data
+        s1 = self.data1
+        s2 = self.data2
+        s3 = self.data3
         self.this_figure = MyFigure(width=6, height=4, dpi=100)
         self.this_figure.axes.grid('on')
-        self.this_figure.axes.plot(t, s)
+        self.this_figure.axes.plot(t, s1)
+        self.this_figure.axes.plot(t, s2)
+        self.this_figure.axes.plot(t, s3)
         self.scene.addWidget(self.this_figure)
         self.plot.setScene(self.scene)
         self.plot.show()
